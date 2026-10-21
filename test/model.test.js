@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {fresh,validate,clean,brief} from '../model.js';
+test('vehicle step requires bounded year, make and model',()=>{const s=fresh();assert.match(validate(s,0),/year/);s.year='2022';assert.match(validate(s,0),/make/);Object.assign(s,{make:'Demo',model:'Coupe'});assert.equal(validate(s,0),'');s.year='9999';assert.ok(validate(s,0));});
+test('damage selection is required and unknown stored areas are removed',()=>{assert.ok(validate(fresh(),1));const s=clean({zones:['Hood','Hood','bad'],notes:'x'.repeat(2000),time:'bogus'});assert.deepEqual(s.zones,['Hood']);assert.equal(s.notes.length,1500);assert.equal(s.time,'Morning');assert.equal(validate(s,1),'');});
+test('date preference rejects past and missing dates',()=>{const s=fresh();assert.ok(validate(s,2));s.day='2000-01-01';assert.ok(validate(s,2));s.day='2099-01-01';assert.equal(validate(s,2),'');});
+test('brief labels demo and excludes photo bytes',()=>{const result=brief({...fresh(),zones:['Roof']},2);assert.match(result.notice,/Not a quote/);assert.equal(result.damage.localPhotoCount,2);assert.deepEqual(result.damage.areas,['Roof']);assert.equal(result.photos,undefined);});
+test('malformed saved data safely defaults',()=>{assert.deepEqual(clean(null),fresh());assert.deepEqual(clean({zones:'Hood',year:42}).zones,[]);});
